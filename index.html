@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP Q2 2026 — a BizOps teardown</title>
+<style>
+  :root{
+    --paper:#F3F2EC; --card:#FFFFFF; --ink:#1C1B18; --ink-soft:#5B5A54;
+    --hair:#DEDCD2; --signal:#0F6E56; --signal-bg:#E1F5EE;
+    --risk:#993C1D; --risk-bg:#FAECE7; --accent:#2E3454;
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-voice:Georgia,"Times New Roman",serif;
+    --font-mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);line-height:1.5}
+  .wrap{max-width:920px;margin:0 auto;padding:48px 24px 80px}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 8px}
+  h1{font-family:var(--font-voice);font-weight:400;font-size:34px;line-height:1.2;margin:0 0 6px}
+  .sub{font-size:15px;color:var(--ink-soft);margin:0 0 32px;max-width:640px}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);margin-bottom:40px}
+  .kpi{background:var(--card);padding:18px 16px}
+  .kpi .label{font-size:12px;color:var(--ink-soft);margin:0 0 6px}
+  .kpi .val{font-family:var(--font-voice);font-size:26px;margin:0 0 4px}
+  .kpi .delta{font-family:var(--font-mono);font-size:12px;color:var(--signal)}
+  section{margin-bottom:48px}
+  .kicker{font-family:var(--font-mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 4px}
+  h2{font-size:19px;font-weight:500;margin:0 0 6px}
+  .finding{font-size:14px;color:var(--ink-soft);margin:0 0 20px;max-width:600px}
+  .card{background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:24px}
+
+  .diverge{display:flex;flex-direction:column;gap:22px}
+  .drow{display:grid;grid-template-columns:120px 1fr 64px;align-items:center;gap:12px}
+  .dname{font-size:13px;color:var(--ink-soft);text-align:right}
+  .dtrack{position:relative;height:26px;background:var(--paper);border-radius:4px}
+  .dcenter{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--hair)}
+  .dbar{position:absolute;top:0;height:100%;border-radius:4px}
+  .dbar.pos{left:50%;background:var(--signal-bg)}
+  .dbar.pos .fill{position:absolute;inset:0;background:var(--signal)}
+  .dbar.neg{right:50%;background:var(--risk-bg)}
+  .dbar.neg .fill{position:absolute;inset:0;background:var(--risk)}
+  .dval{font-family:var(--font-mono);font-size:14px;text-align:left}
+  .dval.neg{color:var(--risk);text-align:right}
+  .dval.pos{color:var(--signal)}
+
+  .timeline{position:relative;padding:12px 0 4px}
+  .tline{position:absolute;left:0;right:0;top:38px;height:1px;background:var(--hair)}
+  .tacq{display:inline-block;width:32%;vertical-align:top;padding:0 8px}
+  .tdot{width:9px;height:9px;border-radius:50%;margin:0 auto 8px;position:relative;z-index:1}
+  .tdot.closed{background:var(--signal)}
+  .tdot.pending{background:var(--risk)}
+  .tname{font-weight:500;font-size:14px;text-align:center;margin:0 0 2px}
+  .tmeta{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);text-align:center}
+  .ttag{font-size:11px;text-align:center;margin-top:6px;padding:2px 8px;border-radius:20px;display:inline-block;margin-left:50%;transform:translateX(-50%)}
+  .ttag.closed{background:var(--signal-bg);color:var(--signal)}
+  .ttag.pending{background:var(--risk-bg);color:var(--risk)}
+
+  canvas{max-width:100%}
+  footer{border-top:1px solid var(--hair);padding-top:20px;font-size:12px;color:var(--ink-soft)}
+  footer p{margin:0 0 6px}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--ink-soft);margin-bottom:12px}
+  .dot{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">BizOps teardown — built same-day from the SAP Q2 2026 filing</p>
+  <h1>Is SAP's Autonomous Enterprise story showing up in the numbers yet?</h1>
+  <p class="sub">Four questions tested against SAP's Q2 and half-year 2026 results, released July 23, 2026. Data pulled directly from the Quarterly Statement, Results Presentation, and Half-Year Report — built end to end by directing Claude through a SQLite schema, ETL pass, and analysis queries.</p>
+
+  <div class="kpi-row">
+    <div class="kpi"><p class="label">Cloud revenue, Q2</p><p class="val">€6.28bn</p><p class="delta">+22% / +24% cc</p></div>
+    <div class="kpi"><p class="label">Current cloud backlog</p><p class="val">€22.9bn</p><p class="delta">+27% / +26% cc</p></div>
+    <div class="kpi"><p class="label">Operating margin, H1 (non-IFRS)</p><p class="val">28.9%</p><p class="delta">+1.0pp yoy</p></div>
+    <div class="kpi"><p class="label">Free cash flow, H1</p><p class="val">€6.25bn</p><p class="delta">+5% yoy</p></div>
+  </div>
+
+  <section>
+    <p class="kicker">Finding 1 — segment tension</p>
+    <h2>The AI narrative sits on top of a shrinking consulting arm</h2>
+    <p class="finding">H1 2026 segment profit, constant currency. The core product segment is growing fast; the segment built to help customers actually adopt that product is contracting — a pattern worth watching if "Autonomous Enterprise" adoption depends on services support.</p>
+    <div class="card diverge">
+      <div class="drow">
+        <div class="dname">ATS (product)</div>
+        <div class="dtrack"><div class="dcenter"></div><div class="dbar pos" style="width:15.2%"><div class="fill"></div></div></div>
+        <div class="dval pos">+15.2%</div>
+      </div>
+      <div class="drow">
+        <div class="dname">Core Services (consulting)</div>
+        <div class="dtrack"><div class="dcenter"></div><div class="dbar neg" style="width:17.3%"><div class="fill"></div></div></div>
+        <div class="dval neg">-17.3%</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Finding 2 — growth source</p>
+    <h2>Q2 cloud growth is still a migration story, not an AI-native one</h2>
+    <p class="finding">Contribution to the €1,151m constant-currency increase in cloud revenue, Q2 2026 vs Q2 2025, by product line.</p>
+    <div class="card">
+      <div class="legend"><span><span class="dot" style="background:#2a78d6"></span>EUR millions of growth contributed</span></div>
+      <div style="position:relative;width:100%;height:160px"><canvas id="growthChart" role="img" aria-label="Bar chart: Cloud ERP Suite contributed 1103 million euros of growth, Extension Suite 68 million, IaaS negative 20 million">Cloud ERP Suite +1,103m, Extension Suite +68m, IaaS -20m</canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Finding 3 — M&amp;A cadence</p>
+    <h2>Three acquisitions, one five-week window, ~€2bn committed</h2>
+    <p class="finding">Reltio, Dremio, and Prior Labs were all announced between March 27 and May 4, 2026. Only Reltio closed inside Q2 — Dremio and Prior Labs closed after quarter-end, so their >€100m profit dilution shows up in guidance, not yet in these actuals.</p>
+    <div class="card">
+      <div class="timeline">
+        <div class="tline"></div>
+        <div class="tacq">
+          <div class="tdot closed"></div>
+          <p class="tname">Reltio</p>
+          <p class="tmeta">Ann. Mar 27 &rarr; Closed May 7</p>
+          <span class="ttag closed">In Q2 actuals</span>
+        </div>
+        <div class="tacq">
+          <div class="tdot pending"></div>
+          <p class="tname">Dremio</p>
+          <p class="tmeta">Ann. May 4 &rarr; Closed Jul 6</p>
+          <span class="ttag pending">Post-Q2, guidance only</span>
+        </div>
+        <div class="tacq">
+          <div class="tdot pending"></div>
+          <p class="tname">Prior Labs</p>
+          <p class="tmeta">Ann. May 4 &rarr; Closed Jul 16</p>
+          <span class="ttag pending">Post-Q2, guidance only</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Finding 4 — customer win mix</p>
+    <h2>Under 1 in 5 named logos this quarter carry an explicit AI tag</h2>
+    <p class="finding">Every customer named in the Business Highlights section, tallied by SAP's own category headings.</p>
+    <div class="card">
+      <div style="position:relative;width:100%;height:220px"><canvas id="winsChart" role="img" aria-label="Horizontal bar chart of Q2 2026 customer win categories: RISE with SAP 18, AI and data solutions 8, Went live 6, SAP GROW 5, Key portfolio win 4">RISE with SAP 18, AI and data solutions 8, Went live 6, SAP GROW 5, Key portfolio win 4</canvas></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Source: SAP SE, Quarterly Statement Q2 2026, Q2 2026 Results Presentation, and Half-Year Report 2026 (published July 23, 2026, sap.com/investors).</p>
+    <p>Methodology notes: Finding 1 growth rates follow SAP's own convention of current-year constant currency vs. prior-year actual currency. Finding 4 categories are SAP's own subheadings from the Business Highlights section, tallied rather than independently classified. Not investment advice — this is a product operations / business analysis exercise, not a research report.</p>
+  </footer>
+
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+new Chart(document.getElementById('growthChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Cloud ERP Suite','Extension Suite','IaaS'],
+    datasets: [{ data: [1103,68,-20], backgroundColor: ['#2a78d6','#2a78d6','#e34948'], borderRadius: 4, barThickness: 28 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display:false }, tooltip: { callbacks: { label: c => (c.raw<0?'-':'+')+'\u20ac'+Math.abs(c.raw)+'m' } } },
+    scales: {
+      x: { grid:{color:'#e1e0d9'}, ticks:{color:'#898781', callback: v => (v<0?'-':'')+'\u20ac'+Math.abs(v)+'m'} },
+      y: { grid:{display:false}, ticks:{color:'#52514e'} }
+    }
+  }
+});
+new Chart(document.getElementById('winsChart'), {
+  type: 'bar',
+  data: {
+    labels: ['RISE with SAP','AI and data solutions','Went live','SAP GROW','Key portfolio win'],
+    datasets: [{ data: [18,8,6,5,4], backgroundColor: '#0F6E56', borderRadius: 4, barThickness: 20 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display:false } },
+    scales: {
+      x: { grid:{color:'#e1e0d9'}, ticks:{color:'#898781'} },
+      y: { grid:{display:false}, ticks:{color:'#52514e'} }
+    }
+  }
+});
+</script>
+</body>
+</html>
