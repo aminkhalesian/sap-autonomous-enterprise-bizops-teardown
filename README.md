@@ -3,7 +3,7 @@
 Testing SAP's "Autonomous Enterprise" AI narrative against its own published Q2 2026 segment and product-line data — built same-day from the public filing.
 
 **📄 Full case study:** [Read on Notion →](https://aminkhalesianprojects.notion.site/Product-BizOps-Analytics-Case-Study-Testing-SAP-s-Autonomous-Enterprise-Narrative-Against-Its-O-3a75adec5ffb807084a1f89b0c1dad3e?source=copy_link)
-**📊 Dashboard:** [Open interactive dashboard →](https://aminkhalesian.github.io/sap-autonomous-enterprise-bizops-teardown/))
+**📊 Dashboard:** [Open interactive dashboard →](https://aminkhalesian.github.io/sap-autonomous-enterprise-bizops-teardown/)
 
 ## Headline finding
 
